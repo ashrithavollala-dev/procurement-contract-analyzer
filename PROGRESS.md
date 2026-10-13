@@ -2,7 +2,9 @@
 
 ## Stages
 - [x] 1. Compatibility gate: docs read, versions pinned, Ollama checks, TECHNICAL_DECISIONS.md, API_CONTRACT.md, file-tree plan, smoke tests
-- [ ] 2. Backend foundation: pom, yml profiles, Flyway V1/V2, entities, repositories, HikariCP, `mvn -U verify`
+- [x] 2. Backend foundation: pom, yml profiles, Flyway V1/V2, entities, repositories, HikariCP, `mvn -U verify`
+      (VERIFIED 2026-10-13: `mvn -B verify` BUILD SUCCESS, 10 tests: ModelSelectionSmokeTest 4, FlywayMigrationTest 6;
+      context starts with ddl-auto=validate and PgVectorStore schema-validation=true)
 - [ ] 3. Ingestion: extractor, chunker, pipeline, executors, recovery, vector store config, dimension check
 - [ ] 4. AI layer and API: prompts, provider switching, agents, grounding, risk scorer, services, DTOs, mappers, controllers, errors
 - [ ] 5. Backend tests and SamplePdfGenerator (+ committed sample PDFs)
@@ -47,4 +49,7 @@ frontend/ (Vite) src/api, layouts, features/*, notifications, types, components,
 ```
 
 ## Notes for resume
+- Do NOT write Java/SQL via bash heredocs: the Bash tool strips backslashes. Use the Write tool.
+- Test doubles live in backend/src/test/.../support (StubChatModel, FakeEmbeddingModel, TestModelConfig,
+  TestcontainersConfig, AbstractIntegrationTest). Planned: LlmAvailability interface so tests can control reachability.
 - Ollama checks done (0.40.3, llama3.2:3b, tool call probe OK) — see docs/TECHNICAL_DECISIONS.md section 13.

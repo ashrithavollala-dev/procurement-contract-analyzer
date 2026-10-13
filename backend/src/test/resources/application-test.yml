@@ -1,0 +1,49 @@
+# Offline test profile: no Ollama, no API key, no ONNX download, no network besides the
+# Testcontainers database. Real model auto-configuration is disabled; TestModelConfig
+# provides StubChatModel and FakeEmbeddingModel.
+spring:
+  ai:
+    model:
+      chat: none
+      embedding: none
+    ollama:
+      # Nothing listens here: anything that tried to reach Ollama would fail fast.
+      base-url: http://127.0.0.1:9
+    openai:
+      api-key: not-configured
+  datasource:
+    hikari:
+      maximum-pool-size: 6
+      minimum-idle: 1
+      leak-detection-threshold: 20000
+  lifecycle:
+    timeout-per-shutdown-phase: 5s
+
+app:
+  upload:
+    dir: ${java.io.tmpdir}/contract-analyzer-test/uploads
+    max-file-size: 5MB
+    max-pages: 50
+  ingestion:
+    await-termination: 5s
+    min-text-chars: 200
+  audit:
+    await-termination: 5s
+  llm:
+    provider: ollama
+    ollama-base-url: http://127.0.0.1:9
+    status-cache-ttl: 0s
+    probe-timeout: 500ms
+  agent:
+    rule-timeout: 5s
+  qa:
+    timeout: 10s
+  cors:
+    allowed-origins: http://localhost:5176
+
+logging:
+  level:
+    root: WARN
+    com.company.contractanalyzer: INFO
+    org.testcontainers: WARN
+    com.zaxxer.hikari: WARN
