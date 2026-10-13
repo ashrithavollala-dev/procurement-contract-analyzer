@@ -1,0 +1,17 @@
+# Container profile: structured JSON logs, database reached through the Compose service name.
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:contract_analyzer}
+
+logging:
+  structured:
+    format:
+      console: ecs
+  level:
+    root: INFO
+    com.company.contractanalyzer: INFO
+    org.springframework.ai: WARN
+
+springdoc:
+  swagger-ui:
+    enabled: ${SWAGGER_UI_ENABLED:true}

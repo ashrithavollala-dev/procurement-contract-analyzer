@@ -1,0 +1,224 @@
+# Base configuration. Every value that differs between environments is environment-driven.
+# Profiles: dev (host-run against the Docker database), prod (container), test (src/test).
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  forward-headers-strategy: framework
+  error:
+    include-stacktrace: never
+    include-message: never
+
+spring:
+  application:
+    name: contract-analyzer
+  profiles:
+    default: dev
+  lifecycle:
+    timeout-per-shutdown-phase: ${SHUTDOWN_TIMEOUT:60s}
+  threads:
+    virtual:
+      enabled: false
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: ${UPLOAD_MAX_FILE_SIZE:25MB}
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:26MB}
+      file-size-threshold: 1MB
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5434}/${DB_NAME:contract_analyzer}
+    username: ${DB_USER:analyzer}
+    password: ${DB_PASSWORD:analyzer_dev_password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: ${HIKARI_POOL_NAME:contract-analyzer-pool}
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:10}
+      minimum-idle: ${HIKARI_MIN_IDLE:2}
+      connection-timeout: ${HIKARI_CONNECTION_TIMEOUT_MS:10000}
+      idle-timeout: ${HIKARI_IDLE_TIMEOUT_MS:300000}
+      max-lifetime: ${HIKARI_MAX_LIFETIME_MS:1200000}
+      leak-detection-threshold: ${HIKARI_LEAK_DETECTION_MS:20000}
+      validation-timeout: 3000
+      auto-commit: true
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 25
+        order_inserts: true
+        format_sql: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+  jackson:
+    default-property-inclusion: always
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    time-zone: UTC
+
+  # Applied by Boot to the auto-configured RestClient.Builder, which Spring AI's OllamaApi
+  # and OpenAiApi use. CPU-only inference is slow and the first call loads the model.
+  http:
+    client:
+      connect-timeout: ${LLM_CONNECT_TIMEOUT_SECONDS:5}s
+      read-timeout: ${OLLAMA_READ_TIMEOUT_SECONDS:300}s
+
+  ai:
+    # Explicit per-capability model selection: three model starters are on the classpath.
+    model:
+      chat: ${LLM_PROVIDER:ollama}
+      embedding: transformers
+      image: none
+      audio:
+        speech: none
+        transcription: none
+      moderation: none
+    retry:
+      max-attempts: 1
+      on-client-errors: false
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      init:
+        pull-model-strategy: never
+      chat:
+        options:
+          model: ${OLLAMA_CHAT_MODEL:llama3.2:3b}
+          temperature: 0.0
+          num-ctx: ${OLLAMA_NUM_CTX:4096}
+          keep-alive: ${OLLAMA_KEEP_ALIVE:10m}
+    openai:
+      # Sentinel keeps the context startable without a key; LlmStatusService reports it as unreachable.
+      api-key: ${OPENAI_API_KEY:not-configured}
+      chat:
+        options:
+          model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
+          temperature: ${OPENAI_TEMPERATURE:0.0}
+    embedding:
+      transformer:
+        cache:
+          enabled: true
+          directory: ${EMBEDDING_CACHE_DIR:${user.home}/.contract-analyzer/onnx-cache}
+        tokenizer:
+          options:
+            padding: true
+    vectorstore:
+      pgvector:
+        initialize-schema: false
+        schema-validation: true
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 384
+        id-type: UUID
+        table-name: vector_store
+        schema-name: public
+        max-document-batch-size: ${EMBEDDING_BATCH_SIZE:32}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  info:
+    env:
+      enabled: true
+  metrics:
+    tags:
+      application: contract-analyzer
+
+info:
+  app:
+    name: Agentic Procurement Contract Analyzer
+    description: Portfolio/demo system - not for untrusted public access
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  packages-to-scan: com.company.contractanalyzer.controller
+
+logging:
+  level:
+    root: INFO
+    com.company.contractanalyzer: INFO
+    org.springframework.ai: WARN
+    # Hikari leak detection is reported at WARN by this logger.
+    com.zaxxer.hikari.pool.ProxyLeakTask: WARN
+
+app:
+  upload:
+    dir: ${UPLOAD_DIR:${user.home}/.contract-analyzer/uploads}
+    max-file-size: ${UPLOAD_MAX_FILE_SIZE:25MB}
+    max-pages: ${UPLOAD_MAX_PAGES:200}
+  ingestion:
+    core-pool-size: ${INGESTION_CORE_POOL_SIZE:2}
+    max-pool-size: ${INGESTION_MAX_POOL_SIZE:4}
+    queue-capacity: ${INGESTION_QUEUE_CAPACITY:25}
+    await-termination: ${INGESTION_AWAIT_TERMINATION:60s}
+    embedding-batch-size: ${EMBEDDING_BATCH_SIZE:32}
+    min-text-chars: ${INGESTION_MIN_TEXT_CHARS:200}
+  chunking:
+    max-tokens: ${CHUNK_MAX_TOKENS:350}
+    overlap-tokens: ${CHUNK_OVERLAP_TOKENS:50}
+    min-tokens: ${CHUNK_MIN_TOKENS:60}
+  vector:
+    dimensions: 384
+  search:
+    default-top-k: 5
+    default-min-score: 0.0
+    snippet-length: 320
+  audit:
+    core-pool-size: ${AUDIT_CORE_POOL_SIZE:1}
+    max-pool-size: ${AUDIT_MAX_POOL_SIZE:1}
+    queue-capacity: ${AUDIT_QUEUE_CAPACITY:5}
+    await-termination: ${AUDIT_AWAIT_TERMINATION:30s}
+  agent:
+    top-k: ${AGENT_TOP_K:6}
+    similarity-threshold: ${AGENT_SIMILARITY_THRESHOLD:0.2}
+    max-iterations: ${AGENT_MAX_ITERATIONS:2}
+    confidence-threshold: ${AGENT_CONFIDENCE_THRESHOLD:0.6}
+    rule-timeout: ${AGENT_RULE_TIMEOUT_SECONDS:240}s
+    max-consecutive-llm-failures: ${AGENT_MAX_CONSECUTIVE_LLM_FAILURES:3}
+    ungrounded-confidence-cap: 0.3
+  llm:
+    provider: ${LLM_PROVIDER:ollama}
+    max-concurrent-calls: ${LLM_MAX_CONCURRENT_CALLS:1}
+    num-ctx: ${OLLAMA_NUM_CTX:4096}
+    reserved-output-tokens: ${LLM_RESERVED_OUTPUT_TOKENS:700}
+    status-cache-ttl: 15s
+    probe-timeout: 3s
+    ollama-base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+    ollama-model: ${OLLAMA_CHAT_MODEL:llama3.2:3b}
+    openai-model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
+    openai-api-key: ${OPENAI_API_KEY:not-configured}
+  qa:
+    mode: ${QA_MODE:rag}
+    top-k: ${QA_TOP_K:5}
+    similarity-threshold: ${QA_SIMILARITY_THRESHOLD:0.3}
+    max-tool-rounds: ${QA_MAX_TOOL_ROUNDS:3}
+    timeout: ${QA_TIMEOUT_SECONDS:280}s
+  recovery:
+    stuck-threshold: ${RECOVERY_STUCK_THRESHOLD:0s}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5175,http://localhost:5176}

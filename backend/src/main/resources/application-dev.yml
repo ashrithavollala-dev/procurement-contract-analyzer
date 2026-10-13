@@ -1,0 +1,11 @@
+# Host-run backend (IDE or `mvn spring-boot:run`) against the Docker Compose database on
+# localhost:5434 and Ollama on localhost:11434. Human-readable console logs.
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5434}/${DB_NAME:contract_analyzer}
+
+logging:
+  level:
+    com.company.contractanalyzer: DEBUG
+    # Spring AI logs prompt content at DEBUG; keep it quiet even in dev.
+    org.springframework.ai: WARN
