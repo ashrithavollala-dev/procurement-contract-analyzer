@@ -22,7 +22,8 @@
       (VERIFIED 2026-10-13 on Node 24.17 / npm 11.13: `npm run lint` clean, `npm run typecheck` clean,
       `npm test` 6 files / 20 tests passed, `npm run build` OK. Node 20 run: NOT VERIFIED locally (CI uses 20).
       jest-dom pinned to 6.9.1 because 6.10 requires Node 22. Vitest capped at 2 fork workers (memory).)
-- [ ] 7. Docker, nginx, compose, CI, READMEs, INTERVIEW_NOTES.md
+- [x] 7. Docker, nginx, compose, CI, READMEs, INTERVIEW_NOTES.md
+      (files written; `docker compose config` OK. Image build + stack startup are verified in stage 8.)
 - [ ] 8. Cross-layer validation, docker smoke test, ZIP
 
 ## File-tree plan

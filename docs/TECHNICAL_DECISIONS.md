@@ -181,7 +181,38 @@ does not show it calls tools reliably on contract questions, so `QA_MODE` defaul
 `tools` mode is implemented and stub-tested. It falls back to `rag` once if the model
 rejects tools. No model was pulled, deleted or upgraded.
 
-## 14. Known limitations
+## 14. Frontend versions (VERIFIED: npm registry, `engines` field checked for Node 20 support)
+
+| Package | Version | Note |
+|---|---|---|
+| react / react-dom | 18.3.1 | React 18 as required |
+| typescript | 5.9.3 | strict mode |
+| vite / @vitejs/plugin-react | 6.4.4 / 4.7.0 | Vite 6 supports Node 18/20/22+. Vite 7 needs Node 20.19+, so 6.x is used for margin. |
+| tailwindcss / postcss / autoprefixer | 3.4.19 / 8.5.30 / 10.6.1 | v3 because the design tokens live in `tailwind.config.js` |
+| axios | 1.20.0 | |
+| @tanstack/react-query | 5.104.2 | `refetchInterval` as a function lets polling stop by itself |
+| react-router-dom | 6.30.6 | |
+| react-hook-form / zod / @hookform/resolvers | 7.90.0 / 3.25.76 / 3.10.0 | resolvers 3.x targets zod 3 |
+| lucide-react | 1.56.0 | peer react ^16.5–^19 |
+| vitest / jsdom / msw | 3.2.7 / 26.1.0 / 2.15.0 | Node ≥18 |
+| @testing-library/react / dom / user-event / jest-dom | 16.3.3 / 10.4.2 / 14.6.7 / **6.9.1** | jest-dom 6.10.0 declares `node >= 22`, so 6.9.1 (`node >= 14`) is pinned |
+| eslint / typescript-eslint / react-hooks / react-refresh | 9.39.5 / 8.71.2 / 5.2.0 / 0.5.7 | npm prints "eslint 9 no longer supported" (ESLint 10 exists). Kept on 9 because the React plugins target it. Upgrading is low risk future work. |
+
+Every version is pinned exactly in package.json, with package-lock.json committed for
+`npm ci`. Vitest runs with `pool: forks` and `maxWorkers: 2`. The default of one jsdom worker
+per CPU made the full suite stall on the 7.7 GB laptop.
+
+## 15. Container images
+
+| Image | Tag | Why |
+|---|---|---|
+| backend build | `maven:3.9.11-eclipse-temurin-17` | Maven 3.9 + JDK 17 |
+| backend runtime | `eclipse-temurin:17-jre` (Ubuntu) | glibc for the ONNX Runtime and DJL tokenizer natives (not Alpine) |
+| frontend build | `node:20.19.5-alpine` | same Node major as CI |
+| frontend runtime | `nginx:1.27.5-alpine` | static SPA + reverse proxy, envsubst templates |
+| database | `pgvector/pgvector:pg16` | PostgreSQL 16 with the `vector` extension (also used by Testcontainers) |
+
+## 16. Known limitations
 
 - No authentication or multi-tenancy: demo-grade, not for untrusted or public access.
 - No OCR. Scanned PDFs fail with `NO_EXTRACTABLE_TEXT`.
