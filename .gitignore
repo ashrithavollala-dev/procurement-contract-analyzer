@@ -1,6 +1,44 @@
-*.zip
+
+# Environment variables and secrets
 .env
-.DS_Store
-Thumbs.db
+.env.*
+!.env.example
+
+# Java / Maven
+target/
+*.class
+
+# Frontend dependencies and build output
+node_modules/
+dist/
+build/
+coverage/
+
+# Python / local environments
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# IDE settings
 .idea/
 .vscode/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Archives
+*.zip
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+# Local databases and generated data
+*.db
+*.sqlite
+*.sqlite3

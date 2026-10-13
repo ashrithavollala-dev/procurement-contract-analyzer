@@ -1,18 +1,28 @@
-# Agentic Procurement Contract Analyzer - full local stack.
-# Host ports (defaults, override in .env): PostgreSQL 5434->5432, backend 8081->8080, frontend 5175->80.
-# The developer's own PostgreSQL on 5432 and other stacks (5433, 8080, 5173, 5174) are never touched.
-# Ollama runs on the HOST (not in Compose); the backend reaches it via host.docker.internal.
+
+# Agentic Procurement Contract Analyzer
+# Local development stack: PostgreSQL/pgvector, Spring Boot, and React.
+#
+# Setup:
+# 1. Copy .env.example to .env.
+# 2. Configure DB_PASSWORD and any required API keys in .env.
+# 3. Start Ollama on the host if using the local Ollama provider.
+# 4. Run: docker compose up --build
+#
+# Development defaults only. Do not use these credentials or settings
+# as production security configuration.
+
 name: procurement-analyzer
 
 services:
   postgres:
     image: pgvector/pgvector:pg16
     restart: unless-stopped
+
     environment:
       POSTGRES_DB: ${DB_NAME:-contract_analyzer}
       POSTGRES_USER: ${DB_USER:-analyzer}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-analyzer_dev_password}
-    # Modest settings for an 8 GB laptop.
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_me_local_only}
+
     command:
       - postgres
       - -c
@@ -21,16 +31,20 @@ services:
       - work_mem=${PG_WORK_MEM:-8MB}
       - -c
       - max_connections=${PG_MAX_CONNECTIONS:-50}
+
     ports:
       - "${POSTGRES_HOST_PORT:-5434}:5432"
+
     volumes:
       - pgdata:/var/lib/postgresql/data
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 12
       start_period: 10s
+
     mem_limit: ${POSTGRES_MEM_LIMIT:-512m}
 
   backend:
@@ -38,76 +52,102 @@ services:
       context: ./backend
     image: procurement-analyzer-backend:local
     restart: unless-stopped
+
     depends_on:
       postgres:
         condition: service_healthy
+
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      # Inside the Compose network: service name + container port, never localhost or 5434.
+
+      # Connect to PostgreSQL through the Compose network.
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-contract_analyzer}
       DB_USER: ${DB_USER:-analyzer}
-      DB_PASSWORD: ${DB_PASSWORD:-analyzer_dev_password}
+      DB_PASSWORD: ${DB_PASSWORD:-change_me_local_only}
+
+      # HikariCP connection pool
       HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE:-10}
       HIKARI_MIN_IDLE: ${HIKARI_MIN_IDLE:-2}
       HIKARI_CONNECTION_TIMEOUT_MS: ${HIKARI_CONNECTION_TIMEOUT_MS:-10000}
       HIKARI_IDLE_TIMEOUT_MS: ${HIKARI_IDLE_TIMEOUT_MS:-300000}
       HIKARI_MAX_LIFETIME_MS: ${HIKARI_MAX_LIFETIME_MS:-1200000}
       HIKARI_LEAK_DETECTION_MS: ${HIKARI_LEAK_DETECTION_MS:-20000}
-      # Must stay inside the mounted "uploads" volume (/data/uploads).
+
+      # Document uploads and limits
       UPLOAD_DIR: ${UPLOAD_DIR:-/data/uploads}
       UPLOAD_MAX_FILE_SIZE: ${UPLOAD_MAX_FILE_SIZE:-25MB}
       UPLOAD_MAX_REQUEST_SIZE: ${UPLOAD_MAX_REQUEST_SIZE:-26MB}
       UPLOAD_MAX_PAGES: ${UPLOAD_MAX_PAGES:-200}
+
+      # Local embedding model caches
       EMBEDDING_CACHE_DIR: /data/onnx-cache
       EMBEDDING_BATCH_SIZE: ${EMBEDDING_BATCH_SIZE:-32}
+
+      # LLM provider: ollama or openai
       LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-llama3.2:3b}
       OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX:-4096}
       OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-10m}
       OLLAMA_READ_TIMEOUT_SECONDS: ${OLLAMA_READ_TIMEOUT_SECONDS:-300}
-      # Unset -> sentinel, so the context still starts; LLM endpoints then answer 503 LLM_UNAVAILABLE.
+
+      # Configure a real key privately when using OpenAI.
+      # The sentinel prevents an unset key from being mistaken for a valid key.
       OPENAI_API_KEY: ${OPENAI_API_KEY:-not-configured}
       OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-gpt-4o-mini}
       OPENAI_TEMPERATURE: ${OPENAI_TEMPERATURE:-0.0}
       LLM_MAX_CONCURRENT_CALLS: ${LLM_MAX_CONCURRENT_CALLS:-1}
       QA_MODE: ${QA_MODE:-rag}
+
+      # Background task executors
       INGESTION_CORE_POOL_SIZE: ${INGESTION_CORE_POOL_SIZE:-2}
       INGESTION_MAX_POOL_SIZE: ${INGESTION_MAX_POOL_SIZE:-4}
       INGESTION_QUEUE_CAPACITY: ${INGESTION_QUEUE_CAPACITY:-25}
       AUDIT_CORE_POOL_SIZE: ${AUDIT_CORE_POOL_SIZE:-1}
       AUDIT_MAX_POOL_SIZE: ${AUDIT_MAX_POOL_SIZE:-1}
       AUDIT_QUEUE_CAPACITY: ${AUDIT_QUEUE_CAPACITY:-5}
+
+      # Clause chunking
       CHUNK_MAX_TOKENS: ${CHUNK_MAX_TOKENS:-350}
       CHUNK_OVERLAP_TOKENS: ${CHUNK_OVERLAP_TOKENS:-50}
       CHUNK_MIN_TOKENS: ${CHUNK_MIN_TOKENS:-60}
+
+      # Agent execution limits
       AGENT_TOP_K: ${AGENT_TOP_K:-6}
       AGENT_MAX_ITERATIONS: ${AGENT_MAX_ITERATIONS:-2}
       AGENT_CONFIDENCE_THRESHOLD: ${AGENT_CONFIDENCE_THRESHOLD:-0.6}
       AGENT_RULE_TIMEOUT_SECONDS: ${AGENT_RULE_TIMEOUT_SECONDS:-240}
+
+      # Recovery and CORS
       RECOVERY_STUCK_THRESHOLD: ${RECOVERY_STUCK_THRESHOLD:-0s}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5175,http://localhost:5176}
+
+      # JVM settings
       JAVA_TOOL_OPTIONS: >-
         -XX:MaxRAMPercentage=${JAVA_MAX_RAM_PERCENTAGE:-60}
         -XX:+ExitOnOutOfMemoryError
         -Djava.awt.headless=true
+
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
     ports:
       - "${BACKEND_HOST_PORT:-8081}:8080"
+
     volumes:
       - uploads:/data/uploads
       - onnx-cache:/data/onnx-cache
       - djl-cache:/data/djl-cache
+
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health/liveness"]
       interval: 15s
       timeout: 5s
       retries: 5
-      # First start downloads the ~80 MB embedding model; give it time.
       start_period: 600s
+
     mem_limit: ${BACKEND_MEM_LIMIT:-1536m}
 
   frontend:
@@ -115,19 +155,23 @@ services:
       context: ./frontend
     image: procurement-analyzer-frontend:local
     restart: unless-stopped
+
     depends_on:
       backend:
         condition: service_healthy
+
     environment:
-      # nginx proxies /api to the backend's Compose service name and container port.
       BACKEND_UPSTREAM: backend:8080
+
     ports:
       - "${FRONTEND_HOST_PORT:-5175}:80"
+
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
       interval: 15s
       timeout: 5s
       retries: 3
+
     mem_limit: ${FRONTEND_MEM_LIMIT:-128m}
 
 volumes:

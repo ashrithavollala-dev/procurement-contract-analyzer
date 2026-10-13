@@ -21,9 +21,11 @@ Stack: Java 17, Spring Boot 3.5.16, Spring AI 1.1.8, PostgreSQL 16 + pgvector, F
 - [LLM setup (Ollama / OpenAI)](#llm-setup) · [Run parts separately](#run-backend-and-frontend-separately) · [Environment variables](#environment-variables)
 - [Migrations](#database-migrations) · [Testing](#testing) · [Demo walkthrough](#demo-walkthrough) · [Limitations](#known-limitations) · [Verified facts vs assumptions](#verified-facts-vs-assumptions)
 
-More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/API_CONTRACT.md](docs/API_CONTRACT.md),
-[docs/TECHNICAL_DECISIONS.md](docs/TECHNICAL_DECISIONS.md), [INTERVIEW_NOTES.md](INTERVIEW_NOTES.md),
-[backend/README.md](backend/README.md), [frontend/README.md](frontend/README.md).
+More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
+[docs/API_CONTRACT.md](docs/API_CONTRACT.md),
+[docs/TECHNICAL_DECISIONS.md](docs/TECHNICAL_DECISIONS.md),
+[backend/README.md](backend/README.md),
+[frontend/README.md](frontend/README.md).
 
 ## Architecture
 

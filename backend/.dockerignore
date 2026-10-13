@@ -1,8 +1,18 @@
-target
-.idea
+# Maven build output
+target/
+
+# IDE files
+.idea/
 *.iml
-.vscode
+.vscode/
+
+# Logs
 *.log
-uploads
-Dockerfile
-.dockerignore
+
+# Local environment and secrets
+.env
+.env.*
+
+# Runtime uploads
+uploads/
+

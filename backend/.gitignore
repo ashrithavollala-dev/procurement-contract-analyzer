@@ -1,10 +1,26 @@
+# Maven build output
 target/
+
+# IDE files
 .idea/
 *.iml
 .vscode/
-*.log
 .classpath
 .project
 .settings/
 .factorypath
+
+# Logs
+*.log
+
+# Environment variables and secrets
+.env
+.env.*
+
+# Generated frontend/build output
+node_modules/
+dist/
+build/
+
+# Runtime uploads
 uploads/
