@@ -287,4 +287,4 @@ circuit breaker); the tools are read-only. There is no unbounded autonomy.
 | Global `@RestControllerAdvice` with one uniform error payload | `exception/GlobalExceptionHandler`, `dto/response/ErrorResponse`, `ErrorPayloadIntegrationTest` |
 | MapStruct mappers with lombok-mapstruct-binding | `mapper/*`, `pom.xml` annotation-processor path |
 | Bean Validation on all request DTOs | `dto/request/*` |
-| Unit-testable services (constructor injection, no static state) and JUnit 5 + Mockito + Testcontainers tests | `service/*`, `ai/*`; `src/test/java/**` (171 tests) |
+| Unit-testable services (constructor injection, no static state) and JUnit 5 + Mockito + Testcontainers tests | `service/*`, `ai/*`; `src/test/java/**` (173 tests) |

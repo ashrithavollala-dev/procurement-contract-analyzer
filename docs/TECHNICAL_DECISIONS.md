@@ -212,7 +212,21 @@ per CPU made the full suite stall on the 7.7 GB laptop.
 | frontend runtime | `nginx:1.27.5-alpine` | static SPA + reverse proxy, envsubst templates |
 | database | `pgvector/pgvector:pg16` | PostgreSQL 16 with the `vector` extension (also used by Testcontainers) |
 
-## 16. Known limitations
+## 16. Stage 8 findings (VERIFIED on the developer machine, 2026-10-13)
+
+- **Model download source.** The `spring-ai-transformers-1.1.8.jar` resource `onnx/all-MiniLM-L6-v2/model.onnx` is a 133-byte Git LFS pointer. The real model (91 MB) is downloaded from `DEFAULT_ONNX_MODEL_URI` (media.githubusercontent.com) by `ResourceCacheService` through `UrlResource.getInputStream()`, which applies **no timeouts** (read in the 1.1.8 source).
+- **Observed failure.** During a network outage the download stalled, startup blocked forever and the container went unhealthy.
+- **Fix.** `ContractAnalyzerApplication` sets `sun.net.client.defaultConnectTimeout=30000` and `sun.net.client.defaultReadTimeout=120000` (JDK defaults for `HttpURLConnection`) unless the operator already set them. A stalled download now fails, and `restart: unless-stopped` retries it. The healthcheck start period was raised to 600 s.
+- **Docker image builds** failed twice on DNS or network outages inside the build. The Dockerfile now uses a BuildKit cache mount for `~/.m2` and Maven Resolver HTTP retries (`aether.connector.http.retryHandler.count=5`).
+- **Docker smoke test results.** All three services were healthy.
+  - Real-embedding ingestion: READY in about 3 s (3 pages, 15 chunks).
+  - Search returns the expected clauses.
+  - Scanned PDF, duplicate and non-PDF uploads give the specified errors.
+  - **Container → host Ollama works with default Ollama settings on this Windows host.** A 1-rule audit completed in 85 s with a grounded finding, and Ask answered in 28 s with citations. `ollama ps` showed context 4096, confirming that `num-ctx` is applied.
+  - The very first status probe timed out once (3 s probe while Ollama was cold); the next probe succeeded.
+- **NOT VERIFIED:** the optional `LiveModelsSmokeTest` (`mvn -Plive-it verify`). The same capabilities were exercised through the Docker stack instead. A frontend build or test run on Node 20 locally (CI uses Node 20). A real OpenAI call (no key used).
+
+## 17. Known limitations
 
 - No authentication or multi-tenancy: demo-grade, not for untrusted or public access.
 - No OCR. Scanned PDFs fail with `NO_EXTRACTABLE_TEXT`.

@@ -50,7 +50,7 @@ Swagger UI: http://localhost:8081/swagger-ui.html in Docker, or :8080 for a plai
 
 ## Tests
 
-There are 171 tests, and no test needs Ollama, an API key or the ONNX model download.
+There are 173 tests, and no test needs Ollama, an API key or the ONNX model download.
 `TestModelConfig` provides `StubChatModel` (scripted replies) and `FakeEmbeddingModel` (a
 deterministic hashed bag of words, 384 dims) as `@Primary` beans. Real model
 auto-configuration is disabled in the `test` profile.

@@ -24,7 +24,15 @@
       jest-dom pinned to 6.9.1 because 6.10 requires Node 22. Vitest capped at 2 fork workers (memory).)
 - [x] 7. Docker, nginx, compose, CI, READMEs, INTERVIEW_NOTES.md
       (files written; `docker compose config` OK. Image build + stack startup are verified in stage 8.)
-- [ ] 8. Cross-layer validation, docker smoke test, ZIP
+- [x] 8. Cross-layer validation, docker smoke test, ZIP
+      - VERIFIED: backend DTO fields == frontend types; folders separated; no placeholders; no secrets.
+      - VERIFIED: images built (after 2 network-outage failures; Dockerfile hardened with ~/.m2 cache + retries).
+      - FIXED: stalled ONNX model download blocked startup forever -> JDK HTTP default timeouts in main(),
+        start_period 600s. `mvn verify` re-run: 173 tests green.
+      - VERIFIED (Docker): all 3 services healthy; upload via nginx 202 -> READY ~3s; search correct;
+        scanned PDF FAILED NO_EXTRACTABLE_TEXT; duplicate 409; non-PDF 415; real llama3.2:3b 1-rule audit
+        COMPLETED (85s, grounded, page 3); Ask grounded with citations (28s). WFM stack untouched.
+      - NOT VERIFIED: LiveModelsSmokeTest (-Plive-it), Node 20 locally, OpenAI.
 
 ## File-tree plan
 ```

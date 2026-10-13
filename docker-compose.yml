@@ -107,7 +107,7 @@ services:
       timeout: 5s
       retries: 5
       # First start downloads the ~80 MB embedding model; give it time.
-      start_period: 300s
+      start_period: 600s
     mem_limit: ${BACKEND_MEM_LIMIT:-1536m}
 
   frontend:

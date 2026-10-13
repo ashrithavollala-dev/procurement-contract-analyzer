@@ -84,7 +84,7 @@ Open http://localhost:5175. Other URLs:
 
 **First start downloads the embedding model** (all-MiniLM-L6-v2, about 80 MB). This needs
 internet access once; the model is cached in the `onnx-cache` volume. The backend healthcheck
-allows a 5-minute start period for it.
+allows a 10-minute start period for it. A stalled download times out (JDK HTTP default timeouts set at startup) and the container restarts and retries.
 
 Stop with `docker compose down`. Add `-v` only if you want to delete the database, uploads
 and model cache volumes.
@@ -195,7 +195,7 @@ automatically at backend startup:
 ## Testing
 
 ```bash
-cd backend && mvn verify     # 171 tests; integration tests need a running Docker engine (Testcontainers)
+cd backend && mvn verify     # 173 tests; integration tests need a running Docker engine (Testcontainers)
 cd frontend && npm test      # Vitest + React Testing Library + MSW (20 tests)
 ```
 
@@ -258,13 +258,17 @@ curl -s $API/system/status
 
 | Statement | Status |
 |---|---|
-| Spring Boot 3.5.16 + Spring AI 1.1.8 + Java 17 compile and pass `mvn verify` (171 tests) | VERIFIED (local run, 2026-10-13) |
+| Spring Boot 3.5.16 + Spring AI 1.1.8 + Java 17 compile and pass `mvn verify` (173 tests) | VERIFIED (local run, 2026-10-13) |
 | All Spring AI artifacts and properties used exist in 1.1.8 | VERIFIED (BOM, docs and source jars; see TECHNICAL_DECISIONS.md) |
 | Context starts with no `OPENAI_API_KEY` and nothing listening on the Ollama URL | VERIFIED (`OfflineStartupIntegrationTest`, `ModelSelectionSmokeTest`) |
 | Ollama 0.40.3 with llama3.2:3b emits a structured tool call for a trivial tool | VERIFIED (one probe; see TECHNICAL_DECISIONS.md §13) |
 | llama3.2:3b calls tools reliably for contract Q&A | NOT VERIFIED (so `QA_MODE` defaults to `rag`) |
 | Frontend lint, typecheck, 20 tests and build pass on Node 24 | VERIFIED |
 | Frontend on Node 20 | NOT VERIFIED locally (the CI job uses Node 20) |
-| Docker Compose startup and smoke test | see the final report of the build session |
+| `docker compose up` starts pgvector (5434), backend (8081) and Nginx frontend (5175), all healthy; Flyway migrates the Docker DB | VERIFIED (2026-10-13) |
+| Docker: upload via Nginx → 202 → READY in ~3 s with real ONNX embeddings (3 pages, 15 chunks); semantic search returns ARTICLE 8 for "limitation of liability cap" | VERIFIED |
+| Docker: scanned PDF → FAILED `NO_EXTRACTABLE_TEXT`; duplicate → 409 with `existingContractId`; non-PDF → 415 | VERIFIED |
+| Docker → host Ollama (llama3.2:3b, `host.docker.internal`): 1-rule audit COMPLETED in 85 s, grounded COMPLIANT finding with page; Ask answered in 28 s, grounded with citations | VERIFIED (Windows host, default Ollama settings) |
+| The first LLM status probe after start timed out once (3 s probe), then reported reachable on the next check | OBSERVED (cache TTL 15 s self-corrects) |
 | HTTP read timeout via `spring.http.client.read-timeout` applies to Spring AI's Ollama client | VERIFIED from source (`OllamaApiAutoConfiguration` uses the Boot `RestClient.Builder`); not measured with a real slow call |
 | Interrupting a timed-out call stops the underlying JDK HTTP request | ASSUMPTION |
