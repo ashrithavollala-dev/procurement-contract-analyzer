@@ -18,7 +18,10 @@
       (VERIFIED 2026-10-13: `mvn -B verify` BUILD SUCCESS, 171 tests, 0 failures, 0 skipped; live test
       `LiveModelsSmokeTest` (@Tag live) excluded by default, run with `mvn -Plive-it verify` - NOT YET RUN.
       Fixed during stage: StringTemplate emits CRLF on Windows -> PromptLoader normalises to LF.)
-- [ ] 6. Frontend core, features, tests
+- [x] 6. Frontend core, features, tests
+      (VERIFIED 2026-10-13 on Node 24.17 / npm 11.13: `npm run lint` clean, `npm run typecheck` clean,
+      `npm test` 6 files / 20 tests passed, `npm run build` OK. Node 20 run: NOT VERIFIED locally (CI uses 20).
+      jest-dom pinned to 6.9.1 because 6.10 requires Node 22. Vitest capped at 2 fork workers (memory).)
 - [ ] 7. Docker, nginx, compose, CI, READMEs, INTERVIEW_NOTES.md
 - [ ] 8. Cross-layer validation, docker smoke test, ZIP
 
