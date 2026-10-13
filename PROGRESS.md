@@ -5,7 +5,12 @@
 - [x] 2. Backend foundation: pom, yml profiles, Flyway V1/V2, entities, repositories, HikariCP, `mvn -U verify`
       (VERIFIED 2026-10-13: `mvn -B verify` BUILD SUCCESS, 10 tests: ModelSelectionSmokeTest 4, FlywayMigrationTest 6;
       context starts with ddl-auto=validate and PgVectorStore schema-validation=true)
-- [ ] 3. Ingestion: extractor, chunker, pipeline, executors, recovery, vector store config, dimension check
+- [x] 3. Ingestion: extractor, chunker, pipeline, executors, recovery, vector store config, dimension check
+      (VERIFIED 2026-10-13: `mvn -B verify` BUILD SUCCESS, 53 tests incl. ClauseAwareChunkerTest 28,
+      IngestionPipelineIntegrationTest 3 against Testcontainers pgvector. AuditPersistenceService and
+      RuleEvaluation were written early because StartupRecovery needs them.)
+      Remaining for stage 4: ContractService upload/dispatch (TaskRejectedException -> INGESTION_QUEUE_FULL),
+      delete/reprocess, LlmAvailability, all AI classes, DTOs, mappers, controllers, GlobalExceptionHandler.
 - [ ] 4. AI layer and API: prompts, provider switching, agents, grounding, risk scorer, services, DTOs, mappers, controllers, errors
 - [ ] 5. Backend tests and SamplePdfGenerator (+ committed sample PDFs)
 - [ ] 6. Frontend core, features, tests
