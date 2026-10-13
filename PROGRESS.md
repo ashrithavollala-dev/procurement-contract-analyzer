@@ -14,7 +14,10 @@
 - [x] 4. AI layer and API: prompts, provider switching, agents, grounding, risk scorer, services, DTOs, mappers, controllers, errors
       (VERIFIED 2026-10-13: compiles; full test-profile context with all beans starts; `mvn -B verify` 53 tests green.
       Behavioural tests for these classes are stage 5.)
-- [ ] 5. Backend tests and SamplePdfGenerator (+ committed sample PDFs)
+- [x] 5. Backend tests and SamplePdfGenerator (+ committed sample PDFs)
+      (VERIFIED 2026-10-13: `mvn -B verify` BUILD SUCCESS, 171 tests, 0 failures, 0 skipped; live test
+      `LiveModelsSmokeTest` (@Tag live) excluded by default, run with `mvn -Plive-it verify` - NOT YET RUN.
+      Fixed during stage: StringTemplate emits CRLF on Windows -> PromptLoader normalises to LF.)
 - [ ] 6. Frontend core, features, tests
 - [ ] 7. Docker, nginx, compose, CI, READMEs, INTERVIEW_NOTES.md
 - [ ] 8. Cross-layer validation, docker smoke test, ZIP

@@ -27,8 +27,9 @@ import org.springframework.stereotype.Component;
  * becomes a NEEDS_REVIEW finding and the run continues. A circuit breaker aborts the run as
  * FAILED/LLM_UNAVAILABLE after {@code AGENT_MAX_CONSECUTIVE_LLM_FAILURES} (default 3)
  * consecutive connection failures. Timeouts do not count, because a slow model is still
- * reachable. A successfully judged rule resets the counter. Each finding is persisted in its
- * own short transaction as soon as it is ready, so the UI can show progress.
+ * reachable. Any outcome other than a connection failure, including a timeout, resets the
+ * counter. Each finding is persisted in its own short transaction as soon as it is ready, so
+ * the UI can show progress.
  */
 @Component
 public class AuditWorker {
@@ -79,11 +80,9 @@ public class AuditWorker {
                 log.info("Audit {} rule {} -> {} (confidence={}, iterations={}, errorCode={})", runId, rule.code(),
                         evaluation.status(), evaluation.confidence(), evaluation.iterations(), evaluation.errorCode());
 
-                if (evaluation.errorCode() == ErrorCode.LLM_UNAVAILABLE) {
-                    consecutiveUnreachable++;
-                } else if (evaluation.errorCode() == null) {
-                    consecutiveUnreachable = 0;
-                }
+                // Only connection failures count. Any other outcome (a judgement, a timeout or a
+                // provider error) proves the model server answered, so the streak is reset.
+                consecutiveUnreachable = evaluation.errorCode() == ErrorCode.LLM_UNAVAILABLE ? consecutiveUnreachable + 1 : 0;
                 if (consecutiveUnreachable >= config.getMaxConsecutiveLlmFailures()) {
                     llmAvailability.invalidate();
                     persistence.fail(runId, ErrorCode.LLM_UNAVAILABLE,

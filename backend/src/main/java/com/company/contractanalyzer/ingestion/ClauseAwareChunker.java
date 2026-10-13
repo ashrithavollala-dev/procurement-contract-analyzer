@@ -33,6 +33,9 @@ import java.util.regex.Pattern;
  *       converted to numbers.</li>
  *   <li>{@code Section 4.2 Payment}, {@code Clause 7}: section heading. The article is the
  *       first number.</li>
+ *   <li>For both forms above, the line may have at most 10 trailing words and must not end
+ *       with {@code . , ;}. Otherwise it is a wrapped body line such as
+ *       "Article 4 (Confidentiality) or breach of ...".</li>
  *   <li>{@code 12. Termination}: a number, a dot and a short Title-cased phrase of at most
  *       8 words with no sentence punctuation.</li>
  *   <li>{@code 9.1 The aggregate liability ...}: a numbered sub-clause. It starts a block whose
@@ -64,7 +67,8 @@ public final class ClauseAwareChunker {
             "e.g", "i.e", "no", "nos", "inc", "ltd", "co", "corp", "art", "sec", "cl", "vs", "etc",
             "mr", "ms", "mrs", "dr", "st", "para", "approx", "fig", "u.s", "u.k");
 
-    private static final int MAX_SECTION_TITLE_WORDS = 12;
+    private static final int MAX_ARTICLE_TITLE_WORDS = 10;
+    private static final int MAX_SECTION_TITLE_WORDS = 10;
     private static final int MAX_NUMBERED_TITLE_WORDS = 8;
     private static final int MAX_ALL_CAPS_WORDS = 10;
 
@@ -147,12 +151,15 @@ public final class ClauseAwareChunker {
     }
 
     static HeadingMatch detectHeading(String line) {
+        // A wrapped body line can start with "Article 4 ..." or "Section 2 ...": headings are
+        // short and do not end like a sentence, so both constraints are required.
+        boolean sentenceLike = endsLikeSentence(line);
         Matcher m = ARTICLE.matcher(line);
-        if (m.matches()) {
+        if (m.matches() && !sentenceLike && wordCount(m.group(2)) <= MAX_ARTICLE_TITLE_WORDS) {
             return new HeadingMatch(HeadingKind.ARTICLE, line, toArabic(m.group(1)), true);
         }
         m = SECTION.matcher(line);
-        if (m.matches() && wordCount(m.group(3)) <= MAX_SECTION_TITLE_WORDS) {
+        if (m.matches() && !sentenceLike && wordCount(m.group(3)) <= MAX_SECTION_TITLE_WORDS) {
             boolean topLevel = m.group(2) == null || m.group(2).isEmpty();
             return new HeadingMatch(HeadingKind.SECTION, line, m.group(1), topLevel);
         }
@@ -307,6 +314,11 @@ public final class ClauseAwareChunker {
     }
 
     // ---------------------------------------------------------------- helpers
+
+    private static boolean endsLikeSentence(String line) {
+        char last = line.charAt(line.length() - 1);
+        return last == '.' || last == ',' || last == ';';
+    }
 
     private static int wordCount(String s) {
         if (s == null || s.isBlank()) {

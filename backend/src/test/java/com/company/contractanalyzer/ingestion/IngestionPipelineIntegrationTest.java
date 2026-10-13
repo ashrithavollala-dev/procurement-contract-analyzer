@@ -15,9 +15,9 @@ import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 /** Runs the real pipeline (PDFBox, chunker, PgVectorStore) against Testcontainers pgvector with fake embeddings. */
 class IngestionPipelineIntegrationTest extends AbstractIntegrationTest {
@@ -28,7 +28,11 @@ class IngestionPipelineIntegrationTest extends AbstractIntegrationTest {
     @Autowired private ContractRepository contracts;
     @Autowired private VectorChunkRepository vectors;
     @Autowired private StartupRecovery recovery;
-    @Autowired private JdbcTemplate jdbc;
+
+    @BeforeEach
+    void reset() {
+        resetState();
+    }
 
     @Test
     void textPdfBecomesReadyWithSearchableChunks() throws Exception {
@@ -80,13 +84,21 @@ class IngestionPipelineIntegrationTest extends AbstractIntegrationTest {
     void startupRecoveryMarksInFlightContractsInterrupted() throws Exception {
         UUID id = queue(PdfTextExtractorTest.pdf(List.of(List.of("Pending contract text."))));
         jdbc.update("UPDATE contracts SET status = 'PROCESSING', updated_at = now() - interval '1 hour' WHERE id = ?", id);
+        UUID runId = UUID.randomUUID();
+        jdbc.update("INSERT INTO audit_runs (id, contract_id, status, total_rules, completed_rules, created_at, updated_at) "
+                + "VALUES (?, ?, 'RUNNING', 12, 5, now() - interval '1 hour', now() - interval '1 hour')", runId, id);
 
         StartupRecovery.RecoveryResult result = recovery.recover();
 
-        assertThat(result.contracts()).isGreaterThanOrEqualTo(1);
+        assertThat(result.contracts()).isEqualTo(1);
+        assertThat(result.audits()).isEqualTo(1);
         Contract contract = contracts.findById(id).orElseThrow();
         assertThat(contract.getStatus()).isEqualTo(ContractStatus.FAILED);
         assertThat(contract.getErrorCode()).isEqualTo(ErrorCode.INTERRUPTED.name());
+        assertThat(jdbc.queryForObject("SELECT status || ':' || error_code FROM audit_runs WHERE id = ?", String.class, runId))
+                .isEqualTo("FAILED:INTERRUPTED");
+        assertThat(jdbc.queryForObject("SELECT summary FROM audit_runs WHERE id = ?", String.class, runId))
+                .contains("5 of 12");
     }
 
     private UUID queue(byte[] pdf) throws Exception {

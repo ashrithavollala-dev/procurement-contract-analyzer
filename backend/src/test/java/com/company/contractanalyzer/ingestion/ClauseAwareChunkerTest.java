@@ -52,6 +52,8 @@ class ClauseAwareChunkerTest {
             "12. The Customer shall pay all invoices within thirty days.",
             "USA",
             "in accordance with Section 4.2 of this Agreement the Supplier will provide the reports monthly to the Customer",
+            "Article 4 (Confidentiality) or breach of Article 5 (Data Protection), or to the indemnities in Article 7.",
+            "Section 3 of the order form applies to all deliveries made under this Agreement in each calendar year",
             "Page 3 of 7"
         })
         void ignoresBodyTextAndNoise(String line) {

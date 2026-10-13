@@ -33,15 +33,23 @@ public class PromptLoader {
         return cache.computeIfAbsent(name, PromptLoader::load);
     }
 
-    /** Renders a template with the given variables. Every placeholder must be supplied. */
+    /**
+     * Renders a template with the given variables. Every placeholder must be supplied.
+     * StringTemplate writes the platform line separator, so the output is normalised to
+     * {@code \n}. The same input then gives the same prompt on Windows and Linux.
+     */
     public String render(String name, Map<String, Object> variables) {
-        return PromptTemplate.builder().template(template(name)).variables(variables).build().render();
+        return normalizeNewlines(PromptTemplate.builder().template(template(name)).variables(variables).build().render());
+    }
+
+    static String normalizeNewlines(String text) {
+        return text.replace("\r\n", "\n").replace('\r', '\n');
     }
 
     private static String load(String name) {
         ClassPathResource resource = new ClassPathResource("prompts/" + name + ".st");
         try (InputStream in = resource.getInputStream()) {
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            return normalizeNewlines(new String(in.readAllBytes(), StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new UncheckedIOException("Prompt template not found: prompts/" + name + ".st", e);
         }
