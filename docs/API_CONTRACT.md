@@ -285,14 +285,17 @@ findings with status `NON_COMPLIANT` or `NOT_FOUND` (max 5).
   "llmProvider": "ollama",
   "llmModel": "llama3.2:3b",
   "llmReachable": true,
+  "llmDetail": "Ollama reachable at http://localhost:11434",
   "qaMode": "rag",
   "embeddingModel": "sentence-transformers/all-MiniLM-L6-v2 (ONNX)",
   "embeddingDimension": 384,
   "checkedAt": "2026-10-13T09:15:30.123Z"
 }
 ```
-Reachability is probed (Ollama: `GET {base-url}/api/version`, 3 s timeout; OpenAI: key
-configured) and cached for `app.llm.status-cache-ttl` (default 15 s).
+Reachability is probed and cached for `app.llm.status-cache-ttl` (default 15 s). For Ollama
+the probe is `GET {base-url}/api/tags` with a 3 s timeout, and it also requires that the
+configured model is pulled. For OpenAI it checks that a key is configured. `llmDetail` is a
+short human-readable reason (never contains secrets).
 
 ## Actuator
 

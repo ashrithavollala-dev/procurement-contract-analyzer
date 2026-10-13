@@ -11,7 +11,9 @@
       RuleEvaluation were written early because StartupRecovery needs them.)
       Remaining for stage 4: ContractService upload/dispatch (TaskRejectedException -> INGESTION_QUEUE_FULL),
       delete/reprocess, LlmAvailability, all AI classes, DTOs, mappers, controllers, GlobalExceptionHandler.
-- [ ] 4. AI layer and API: prompts, provider switching, agents, grounding, risk scorer, services, DTOs, mappers, controllers, errors
+- [x] 4. AI layer and API: prompts, provider switching, agents, grounding, risk scorer, services, DTOs, mappers, controllers, errors
+      (VERIFIED 2026-10-13: compiles; full test-profile context with all beans starts; `mvn -B verify` 53 tests green.
+      Behavioural tests for these classes are stage 5.)
 - [ ] 5. Backend tests and SamplePdfGenerator (+ committed sample PDFs)
 - [ ] 6. Frontend core, features, tests
 - [ ] 7. Docker, nginx, compose, CI, READMEs, INTERVIEW_NOTES.md

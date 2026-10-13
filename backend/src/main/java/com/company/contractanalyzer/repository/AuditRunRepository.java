@@ -25,6 +25,8 @@ public interface AuditRunRepository extends JpaRepository<AuditRun, UUID> {
     @EntityGraph(attributePaths = "contract")
     List<AuditRun> findTop5ByOrderByCreatedAtDesc();
 
+    Optional<AuditRun> findFirstByContractIdAndStatusOrderByCreatedAtDesc(UUID contractId, AuditStatus status);
+
     List<AuditRun> findByStatusInAndUpdatedAtBefore(Collection<AuditStatus> statuses, Instant updatedBefore);
 
     @Query("select avg(a.riskScore) from AuditRun a where a.status = com.company.contractanalyzer.enums.AuditStatus.COMPLETED")

@@ -24,4 +24,11 @@ public class TestModelConfig {
     public EmbeddingModel fakeEmbeddingModel() {
         return new FakeEmbeddingModel();
     }
+
+    /** Replaces the network probe; tests switch reachability explicitly. */
+    @Bean
+    @Primary
+    public ControllableLlmAvailability controllableLlmAvailability() {
+        return new ControllableLlmAvailability();
+    }
 }
